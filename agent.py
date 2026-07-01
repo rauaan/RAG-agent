@@ -1,3 +1,6 @@
+from router import Router, Tool
+
+from tools.local_search import LocalSearchTool
 from tools.web_search import WebSearchTool
 
 from rag.splitter import split_documents
@@ -8,31 +11,45 @@ from prompts.system_prompt import SYSTEM_PROMPT
 from utils import build_context
 
 
-def answer_question(query: str) -> str:
+router = Router()
 
-    # Step 1: Collect documents
-    web_tool = WebSearchTool()
+local_tool = LocalSearchTool()
+web_tool = WebSearchTool()
 
-    documents = web_tool.run(query)
+
+def answer_question(query: str):
+
+    decision = router.route(query)
+
+    documents = []
+
+    if decision == Tool.LOCAL:
+        print("Using local search...")
+        documents.extend(local_tool.run(query))
+
+    elif decision == Tool.WEB:
+        print("Using web search...")
+        documents.extend(web_tool.run(query))
+
+    elif decision == Tool.BOTH:
+        print("Using local + web search...")
+        documents.extend(local_tool.run(query))
+        documents.extend(web_tool.run(query))
+
+    else:
+        return "I don't know which tool to use."
 
     if not documents:
         return "No documents found."
 
-    # Step 2: Chunk
     chunks = split_documents(documents)
 
-    # Step 3: Create temporary vector DB
     store = TemporaryVectorStore()
 
     store.index(chunks)
 
-
-    store.index(chunks)
-
-    # Step 4: Retrieve
     docs = store.retrieve(query)
 
-    # Step 5: Build prompt
     context = build_context(docs)
 
     chain = SYSTEM_PROMPT | llm
@@ -49,7 +66,7 @@ def main():
 
     while True:
 
-        query = input("\nAsk a question (q to quit): ")
+        query = input("\nAsk a question (q to quit): ").strip()
 
         if query.lower() == "q":
             break

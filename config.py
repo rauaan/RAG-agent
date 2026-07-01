@@ -1,5 +1,7 @@
 MODEL_NAME = "gemma4:e2b"
 EMBED_MODEL = "mxbai-embed-large"
+LOCAL_DIRECCTORY_PATH = "./data/vector_database"
+LOCAL_DOC_PATH = "./data/law.pdf"
 
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 80
